@@ -11,6 +11,8 @@ import java.nio.file.Files;
 
 public class RequestHandler extends Thread {
 	private static final String DOCUMENT_ROOT = "./webapp";
+	private static final String ERROR_400 = "/error/400.html";
+	private static final String ERROR_404 = "/error/404.html";
 	private Socket socket;
 	
 	public RequestHandler( Socket socket ) {
@@ -56,7 +58,16 @@ public class RequestHandler extends Thread {
 				consoleLog("request:" + tokens[1]);
 				responseStaticResource(os, tokens[1], tokens[2]);
 			} else { // POST, PUT, DELETE, HEAD, CONNECT 와 같은 Method는 무시
-				consoleLog("Bad Request:" + tokens[1]);
+				String protocol = "HTTP/1.1";
+				//응답 예시
+				/*
+				 *  HTTP/1.1 400 Bad Request\r\n
+				 *  Content-Type:text/html; charset=utf-8\r\n
+				 *  \r\n
+				 *  HTML 에러 문서 (./webapp/error/400.html)
+				 */
+				response400Error(os, protocol);
+				consoleLog("Bad Request:" + request);
 			}
 			
 			// 예제 응답입니다.
@@ -93,19 +104,42 @@ public class RequestHandler extends Thread {
 			 *  HTTP/1.1 404 File Not Found\r\n
 			 *  Content-Type:text/html; charset=utf-8\r\n
 			 *  \r\n
-			 *  HTML 에러 문서
+			 *  HTML 에러 문서 (./webapp/error/404.html)
 			 */
-//			response404Error(os, protocol);
+			response404Error(os, protocol);
 			
 			return;
 		}
 		
 		//nio
 		byte[] body = Files.readAllBytes(file.toPath());
+		String contentType = Files.probeContentType(file.toPath());
 		
 		//응답
 		os.write( (protocol + " 200 OK\r\n").getBytes( "UTF-8" ) );
-		os.write( "Content-Type:text/html; charset=utf-8\r\n".getBytes( "UTF-8" ) );
+		os.write( ("Content-Type:" + contentType + "; charset=utf-8\r\n").getBytes( "UTF-8" ) );
+		os.write( "\r\n".getBytes() );
+		os.write( body );
+	}
+	
+	public void response400Error(OutputStream os, String protocol) throws IOException {
+		File error400Page = new File(DOCUMENT_ROOT + ERROR_400);
+		byte[] body = Files.readAllBytes(error400Page.toPath());
+		String contentType = Files.probeContentType(error400Page.toPath());
+		
+		os.write( (protocol + " 400 Bad Request\r\n").getBytes( "UTF-8" ) );
+		os.write( ("Content-Type:" + contentType + "; charset=utf-8\r\n").getBytes( "UTF-8" ) );
+		os.write( "\r\n".getBytes() );
+		os.write( body );
+	}
+	
+	public void response404Error(OutputStream os, String protocol) throws IOException {
+		File error404Page = new File(DOCUMENT_ROOT + ERROR_404);
+		byte[] body = Files.readAllBytes(error404Page.toPath());
+		String contentType = Files.probeContentType(error404Page.toPath());
+		
+		os.write( (protocol + " 404 File Not Found\r\n").getBytes( "UTF-8" ) );
+		os.write( ("Content-Type:" + contentType + "; charset=utf-8\r\n").getBytes( "UTF-8" ) );
 		os.write( "\r\n".getBytes() );
 		os.write( body );
 	}
