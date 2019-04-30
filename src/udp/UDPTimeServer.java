@@ -18,6 +18,8 @@ public class UDPTimeServer {
 			//1. socket 생성
 			socket = new DatagramSocket(PORT);
 			
+			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss a");
+			
 			while(true) {
 				//2. 데이터 수신
 				DatagramPacket receivePacket = new DatagramPacket(new byte[BUFFER_SIZE], BUFFER_SIZE);
@@ -30,7 +32,6 @@ public class UDPTimeServer {
 				System.out.println("[server] received:" + message);
 				
 				//3. 데이터 전송
-				SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss a");
 				String date = format.format(Calendar.getInstance().getTime());
 				byte[] sendData = date.getBytes("utf-8");
 				DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, receivePacket.getAddress(), receivePacket.getPort());
